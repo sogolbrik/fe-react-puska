@@ -1,8 +1,9 @@
-// src/App.jsx
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import './App.css';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AdminLayout from './components/layout/AdminLayout';
 import DashboardPage from './pages/DashboardPage';
-import BukuListPage from './features/buku/pages/BukuListPage';
+import IndexBuku from './features/buku/pages/IndexBuku';
+import IndexKategori from './features/kategori/pages/IndexKategori';
 // import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
@@ -16,8 +17,8 @@ export default function App() {
             <AdminLayout>
               <Routes>
                 <Route index element={<DashboardPage />} />
-                <Route path="buku" element={<BukuListPage />} />
-                {/* Tambahkan route lain di sini */}
+                <Route path="buku" element={<IndexBuku />} />
+                <Route path="kategori" element={<IndexKategori />} />
                 {/* <Route path="*" element={<NotFoundPage />} /> */}
               </Routes>
             </AdminLayout>
@@ -25,7 +26,7 @@ export default function App() {
         />
 
         {/* Redirect root ke /admin */}
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/" element={<Navigate to="/admin" replace />} />
       </Routes>
     </BrowserRouter>
   );

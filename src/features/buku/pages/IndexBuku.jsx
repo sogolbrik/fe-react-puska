@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import api from '../../../services/api';
 import BukuForm from '../components/BukuForm';
 import { toast } from 'react-toastify';
-import { FiBook, FiPlus } from 'react-icons/fi';
+import { FiBook, FiPlus, FiEye } from 'react-icons/fi';
+import { IoIosArrowRoundBack } from "react-icons/io";
 
 export default function BukuListPage() {
     const [buku, setBuku] = useState([]);
@@ -16,6 +17,8 @@ export default function BukuListPage() {
     const [editingId, setEditingId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [showForm, setShowForm] = useState(false);
+    const [selectedBuku, setSelectedBuku] = useState(null);
+    const [deleteConfirmation, setDeleteConfirmation] = useState(null);
 
     const fetchBuku = useCallback(async (mountedRef) => {
         try {
@@ -83,8 +86,13 @@ export default function BukuListPage() {
         setShowForm(true);
     };
 
-    const handleDelete = async (id) => {
-        if (!confirm('Yakin ingin menghapus buku ini?')) return;
+    const openDeleteConfirmation = (bukuItem) => {
+        setDeleteConfirmation({ id: bukuItem.id, judul: bukuItem.judul });
+    };
+
+    const confirmDelete = async () => {
+        const { id } = deleteConfirmation;
+        setDeleteConfirmation(null);
 
         try {
             await api.delete(`/buku/${id}`);
@@ -96,6 +104,18 @@ export default function BukuListPage() {
             const message = err.response?.data?.message || 'Gagal menghapus buku.';
             toast.error(message);
         }
+    };
+
+    const cancelDelete = () => {
+        setDeleteConfirmation(null);
+    };
+
+    const handleViewDetail = (bukuData) => {
+        setSelectedBuku(bukuData);
+    };
+
+    const closeModal = () => {
+        setSelectedBuku(null);
     };
 
     const resetForm = () => {
@@ -128,7 +148,7 @@ export default function BukuListPage() {
                     }}
                     className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
-                    <FiPlus />
+                    {showForm ? <IoIosArrowRoundBack /> : <FiPlus />}
                     {showForm ? 'Batal' : 'Tambah Buku'}
                 </button>
             </div>
@@ -194,8 +214,6 @@ export default function BukuListPage() {
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul</th>
-                                    {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Penulis</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Penerbit</th> */}
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tahun</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stok</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -207,21 +225,26 @@ export default function BukuListPage() {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-gray-900">{bukuItem.judul}</div>
                                         </td>
-                                        {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{bukuItem.penulis}</td> */}
-                                        {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{bukuItem.penerbit}</td> */}
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{bukuItem.tahun_terbit}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bukuItem.stok > 0
-                                                    ? 'bg-emerald-100 text-emerald-800'
-                                                    : 'bg-rose-100 text-rose-800'
+                                                ? 'bg-emerald-100 text-emerald-800'
+                                                : 'bg-rose-100 text-rose-800'
                                                 }`}>
                                                 {bukuItem.stok}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium flex items-center gap-2">
+                                            <button
+                                                onClick={() => handleViewDetail(bukuItem)}
+                                                className="text-gray-500 hover:text-indigo-600 transition-colors"
+                                                aria-label="Lihat detail"
+                                            >
+                                                <FiEye className="w-4 h-4" />
+                                            </button>
                                             <button
                                                 onClick={() => handleEdit(bukuItem)}
-                                                className="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors"
+                                                className="text-indigo-600 hover:text-indigo-900 transition-colors"
                                                 aria-label="Edit"
                                             >
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -229,9 +252,9 @@ export default function BukuListPage() {
                                                 </svg>
                                             </button>
                                             <button
-                                                onClick={() => handleDelete(bukuItem.id)}
+                                                onClick={() => openDeleteConfirmation(bukuItem)}
                                                 className="text-rose-600 hover:text-rose-900 transition-colors"
-                                                aria-label="Delete"
+                                                aria-label="Hapus buku"
                                             >
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -245,6 +268,118 @@ export default function BukuListPage() {
                     </div>
                 )}
             </div>
+
+            {/* Modal Detail */}
+            {selectedBuku && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                    <div className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 scale-100 animate-fade-in">
+                        <div className="relative">
+
+                            <div className="bg-indigo-600 px-6 py-5">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-800/30">
+                                            <FiBook className="h-6 w-6 text-white" />
+                                        </div>
+                                        <h3 className="text-xl font-bold text-white">Detail Buku</h3>
+                                    </div>
+                                    <button
+                                        onClick={closeModal}
+                                        className="text-indigo-200 hover:text-white transition-colors"
+                                        aria-label="Tutup"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Body */}
+                            <div className="px-6 py-6 space-y-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Judul</label>
+                                    <p className="text-gray-900 font-medium">{selectedBuku.judul}</p>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Penulis</label>
+                                    <p className="text-gray-900">{selectedBuku.penulis}</p>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Penerbit</label>
+                                    <p className="text-gray-900">{selectedBuku.penerbit}</p>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Tahun Terbit</label>
+                                    <p className="text-gray-900">{selectedBuku.tahun_terbit}</p>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Stok</label>
+                                    <p className="text-gray-900">{selectedBuku.stok}</p>
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="px-6 pb-6">
+                                <button
+                                    onClick={closeModal}
+                                    className="w-full px-4 py-2.5 font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md hover:shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
+                                >
+                                    Tutup Detail
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Konfirmasi Hapus */}
+            {deleteConfirmation && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                    <div className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 scale-100 animate-fade-in">
+                        <div className="relative">
+
+                            <div className="bg-linear-to-r from-rose-500 to-rose-600 px-6 py-5">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-800/30">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.503-1.668 1.732-2.5L13.732 4.5c-.77-1.148-2.397-1.148-3.168 0L3.434 16.5c-.771.832.192 2.5 1.732 2.5z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white">Hapus Buku?</h3>
+                                </div>
+                            </div>
+
+                            <div className="px-6 py-6">
+                                <p className="text-gray-700 leading-relaxed">
+                                    Anda akan menghapus buku{' '}
+                                    <span className="font-semibold text-rose-700">"{deleteConfirmation.judul}"</span>.
+                                    Tindakan ini <span className="font-medium text-rose-600">tidak dapat dibatalkan</span>.
+                                </p>
+                                <p className="mt-2 text-sm text-gray-500">
+                                    Pastikan stok dan peminjaman sudah ditangani.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row gap-3 px-6 pb-6">
+                                <button
+                                    onClick={cancelDelete}
+                                    className="flex-1 px-4 py-2.5 text-gray-700 font-medium bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="flex-1 px-4 py-2.5 font-medium text-white bg-linear-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 rounded-xl shadow-md hover:shadow transition-all duration-200"
+                                >
+                                    Hapus Selamanya
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }
